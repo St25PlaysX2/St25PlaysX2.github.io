@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #channel-indicator { 
+            position: absolute; top: 20px; right: 20px; 
+            color: white; font: 40px sans-serif; background: rgba(0,0,0,0.5); 
+            padding: 10px; border-radius: 10px; display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="channel-indicator"></div>
+    <iframe id="tv-frame" src=""></iframe>
+
+    <script>
+        const channels = [
+            "https://station1.com/live",
+            "https://station2.com/live",
+            "https://station3.com/live"
+        ];
+        let index = 0;
+        const frame = document.getElementById('tv-frame');
+        const indicator = document.getElementById('channel-indicator');
+
+        function loadChannel(i) {
+            index = (i + channels.length) % channels.length;
+            frame.src = channels[index];
+            
+            // Visual feedback for Grandma
+            indicator.innerText = "Channel " + (index + 1);
+            indicator.style.display = "block";
+            setTimeout(() => { indicator.style.display = "none"; }, 3000);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight") loadChannel(index + 1);
+            if (e.key === "ArrowLeft") loadChannel(index - 1);
+        });
+
+        // Load first channel on boot
+        loadChannel(0);
+    </script>
+</body>
+</html>
