@@ -2,33 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grandma TV Remote</title>
+    <title>Grandmas TV</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: black; overflow: hidden; }
-        #tv-frame { width: 100vw; height: 100vh; border: none; }
 
-        /* THE SHIELD */
+        #viewport {
+            width: 100vw; height: 100vh;
+            overflow: hidden; position: relative;
+        }
+
+        #tv-frame {
+            width: 100%; height: 100%;
+            border: none;
+            position: absolute;
+            top: 0; left: 0;
+            transition: transform 0.3s ease;
+        }
+
+        /* THE SHIELD: Prevents Grandma from accidentally clicking/stopping the video */
         #focus-shield {
             position: absolute; top: 0; left: 0;
             width: 100vw; height: 100vh;
             z-index: 99;
             background: transparent;
-            pointer-events: all; /* Locked by default */
+            pointer-events: all; /* Clicks are blocked by default */
         }
 
-        /* When this class is added, clicks pass through */
+        /* THE MAINTENANCE MODE: Triggered by CTRL+SPACE */
         #focus-shield.unlocked {
-            pointer-events: none;
-            border: 15px solid red;
+            pointer-events: none; /* Clicks pass through to the website */
+            border: 15px solid rgba(255, 0, 0, 0.5); /* Visual reminder that it's unlocked */
             box-sizing: border-box;
         }
 
         #channel-notifier {
-            position: absolute; top: 30px; right: 30px;
-            background: rgba(0, 0, 0, 0.8); color: white;
-            padding: 15px 25px; font-family: sans-serif;
-            font-size: 2rem; border-radius: 10px;
+            position: absolute; top: 30px; left: 30px;
+            background: rgba(0, 120, 215, 0.9); color: white;
+            padding: 10px 30px; font-family: sans-serif;
+            font-size: 3rem; font-weight: bold; border-radius: 5px;
             z-index: 100; display: none;
         }
     </style>
@@ -37,15 +48,16 @@
 
     <div id="channel-notifier"></div>
     <div id="focus-shield"></div>
-    <iframe id="tv-frame" src=""></iframe>
+
+    <div id="viewport">
+        <iframe id="tv-frame" src="" allow="autoplay; fullscreen"></iframe>
+    </div>
 
     <script>
         const channels = [
-            "https://www.antenna.gr/live",
-            "https://www.star.gr/tv/live-stream",
-            "https://maze.toys/mazes/mini/daily/",
-            "https://alwaysjudgeabookbyitscover.com/",
-            "https://sliding.toys/mystic-square/8-puzzle/daily/"
+            { name: "Antenna", url: "https://www.antenna.gr/live", scale: 1.2, top: "-8%" },
+            { name: "Star", url: "https://www.star.gr/tv/live-stream", scale: 2.0, top: "25%" },
+            { name: "Mega", url: "https://www.megatv.com/live/", scale: 1.2, top: "-5%" }
         ];
 
         let currentIndex = 0;
@@ -57,45 +69,52 @@
         function showStatus(text, duration = 3000) {
             notifier.innerText = text;
             notifier.style.display = "block";
-            if (duration > 0) setTimeout(() => { notifier.style.display = "none"; }, duration);
+            clearTimeout(window.notifTimeout);
+            if (duration > 0) {
+                window.notifTimeout = setTimeout(() => { notifier.style.display = "none"; }, duration);
+            }
         }
 
         function lockSystem() {
             shield.classList.remove('unlocked');
             window.focus();
-            showStatus("LOCKED & LOADED");
-            console.log("System Re-locked");
+            showStatus("LOCKED", 1000);
         }
 
         function loadChannel(newIndex) {
             currentIndex = (newIndex + channels.length) % channels.length;
-            frame.src = channels[currentIndex];
-            lockSystem(); // Always lock on channel change
-            showStatus("Channel " + (currentIndex + 1));
+            const ch = channels[currentIndex];
+
+            frame.src = "about:blank";
+
+            frame.style.transform = `scale(${ch.scale})`;
+            frame.style.top = ch.top;
+
+            setTimeout(() => {
+                frame.src = ch.url;
+                showStatus(ch.name, 4000);
+                lockSystem(); // Relock on every channel change
+            }, 100);
         }
 
-        // LISTEN FOR KEYS
         window.addEventListener('keydown', (e) => {
-            // UNLOCK: CTRL + SPACE
+            // THE UNLOCK KEY: CTRL + SPACE
             if (e.ctrlKey && e.code === 'Space') {
                 shield.classList.add('unlocked');
-                showStatus("UNLOCKED (10s)", 10000);
-
-                // Auto-relock after 15 seconds no matter what
+                showStatus("UNLOCKED (5s)", 5000);
                 clearTimeout(unlockTimer);
-                unlockTimer = setTimeout(lockSystem, 15000);
+                unlockTimer = setTimeout(lockSystem, 15000); // Auto-lock after 15 seconds
                 return;
             }
 
-            // NAVIGATE: Only if locked
+            // ONLY NAVIGATE IF LOCKED (prevents keys messing with the website)
             if (!shield.classList.contains('unlocked')) {
                 if (e.key === "ArrowRight") loadChannel(currentIndex + 1);
                 if (e.key === "ArrowLeft") loadChannel(currentIndex - 1);
             }
         }, true);
 
-        // THE AGGRESSIVE RELOAD
-        // If the focus is lost and we aren't in the 15s window, steal it back
+        // Keep the browser window focused so it hears the remote/keyboard
         setInterval(() => {
             if (!shield.classList.contains('unlocked')) {
                 window.focus();
