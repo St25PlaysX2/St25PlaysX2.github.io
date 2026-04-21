@@ -1,47 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandma TV Remote</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
-        #channel-indicator { 
-            position: absolute; top: 20px; right: 20px; 
-            color: white; font: 40px sans-serif; background: rgba(0,0,0,0.5); 
-            padding: 10px; border-radius: 10px; display: none;
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: black; overflow: hidden; }
+        #tv-frame { width: 100vw; height: 100vh; border: none; }
+
+        /* THE SHIELD */
+        #focus-shield {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 99;
+            background: transparent;
+            pointer-events: all; /* Locked by default */
+        }
+
+        /* When this class is added, clicks pass through */
+        #focus-shield.unlocked {
+            pointer-events: none;
+            border: 15px solid red;
+            box-sizing: border-box;
+        }
+
+        #channel-notifier {
+            position: absolute; top: 30px; right: 30px;
+            background: rgba(0, 0, 0, 0.8); color: white;
+            padding: 15px 25px; font-family: sans-serif;
+            font-size: 2rem; border-radius: 10px;
+            z-index: 100; display: none;
         }
     </style>
 </head>
-<body>
-    <div id="channel-indicator"></div>
+<body onload="loadChannel(0)">
+
+    <div id="channel-notifier"></div>
+    <div id="focus-shield"></div>
     <iframe id="tv-frame" src=""></iframe>
 
     <script>
         const channels = [
             "https://www.antenna.gr/live",
             "https://www.star.gr/tv/live-stream",
-            "https://station3.com/live"
+            "https://maze.toys/mazes/mini/daily/",
+            "https://alwaysjudgeabookbyitscover.com/",
+            "https://sliding.toys/mystic-square/8-puzzle/daily/"
         ];
-        let index = 0;
-        const frame = document.getElementById('tv-frame');
-        const indicator = document.getElementById('channel-indicator');
 
-        function loadChannel(i) {
-            index = (i + channels.length) % channels.length;
-            frame.src = channels[index];
-            
-            // Visual feedback for Grandma
-            indicator.innerText = "Channel " + (index + 1);
-            indicator.style.display = "block";
-            setTimeout(() => { indicator.style.display = "none"; }, 3000);
+        let currentIndex = 0;
+        let unlockTimer = null;
+        const frame = document.getElementById('tv-frame');
+        const shield = document.getElementById('focus-shield');
+        const notifier = document.getElementById('channel-notifier');
+
+        function showStatus(text, duration = 3000) {
+            notifier.innerText = text;
+            notifier.style.display = "block";
+            if (duration > 0) setTimeout(() => { notifier.style.display = "none"; }, duration);
         }
 
-        window.addEventListener('keydown', (e) => {
-            if (e.key === "ArrowRight") loadChannel(index + 1);
-            if (e.key === "ArrowLeft") loadChannel(index - 1);
-        });
+        function lockSystem() {
+            shield.classList.remove('unlocked');
+            window.focus();
+            showStatus("LOCKED & LOADED");
+            console.log("System Re-locked");
+        }
 
-        // Load first channel on boot
-        loadChannel(0);
+        function loadChannel(newIndex) {
+            currentIndex = (newIndex + channels.length) % channels.length;
+            frame.src = channels[currentIndex];
+            lockSystem(); // Always lock on channel change
+            showStatus("Channel " + (currentIndex + 1));
+        }
+
+        // LISTEN FOR KEYS
+        window.addEventListener('keydown', (e) => {
+            // UNLOCK: CTRL + SPACE
+            if (e.ctrlKey && e.code === 'Space') {
+                shield.classList.add('unlocked');
+                showStatus("UNLOCKED (10s)", 10000);
+
+                // Auto-relock after 15 seconds no matter what
+                clearTimeout(unlockTimer);
+                unlockTimer = setTimeout(lockSystem, 15000);
+                return;
+            }
+
+            // NAVIGATE: Only if locked
+            if (!shield.classList.contains('unlocked')) {
+                if (e.key === "ArrowRight") loadChannel(currentIndex + 1);
+                if (e.key === "ArrowLeft") loadChannel(currentIndex - 1);
+            }
+        }, true);
+
+        // THE AGGRESSIVE RELOAD
+        // If the focus is lost and we aren't in the 15s window, steal it back
+        setInterval(() => {
+            if (!shield.classList.contains('unlocked')) {
+                window.focus();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
