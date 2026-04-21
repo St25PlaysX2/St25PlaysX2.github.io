@@ -1,13 +1,1 @@
-#!/bin/bash
-
-trap "exit" INT
-
-SPEAKER_MAC="0F:80:0D:23:60:F8"
-
-while true; do
-    # Check if connected
-    if ! bluetoothctl info $SPEAKER_MAC | grep -q "Connected: yes"; then
-        bluetoothctl connect $SPEAKER_MAC
-    fi
-    sleep 30
-done
+(sleep 15 && bash -c 'while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q "Connected: yes"; then bluetoothctl connect 0F:80:0D:23:60:F8; fi; sleep 30; done') &
