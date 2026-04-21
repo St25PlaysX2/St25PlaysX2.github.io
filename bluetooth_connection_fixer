@@ -1,1 +1,1 @@
-(sleep 15 && bash -c 'while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q "Connected: yes"; then bluetoothctl connect 0F:80:0D:23:60:F8; fi; sleep 30; done') &
+sh -c "(sleep 30 && while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q 'Connected: yes'; then bluetoothctl connect 0F:80:0D:23:60:F8; fi; sleep 60; done) &"

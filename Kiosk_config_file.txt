@@ -1,0 +1,13 @@
+connection=wifi
+dhcp=yes
+wifi_encryption=wpa
+wpa_password=5iFQ66rY64y55373
+ssid_name=VODAFONE_GigaWiFiHome_8753
+browser=firefox
+homepage=https://st25playsx2.github.io
+disable_navigation_bar=yes
+persistence=full
+disable_private_mode=yes
+run_command=sh -c "(sleep 30 && while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q 'Connected: yes'; then bluetoothctl connect 0F:80:0D:23:60:F8; fi; sleep 60; done) &"
+shutdown_menu=lock reboot restart-session shutdown sleep
+additional_components=uefi.zip
