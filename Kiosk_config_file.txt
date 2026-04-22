@@ -8,6 +8,6 @@ homepage=https://st25playsx2.github.io
 disable_navigation_bar=yes
 persistence=full
 disable_private_mode=yes
-run_command=sh -c "(sleep 30 && while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q 'Connected: yes'; then bluetoothctl connect 0F:80:0D:23:60:F8; fi; sleep 60; done) &"
+run_command=bash -c "(sleep 30 && while true; do if ! bluetoothctl info 0F:80:0D:23:60:F8 | grep -q 'Connected: yes'; then bluetoothctl connect 0F:80:0D:23:60:F8 && sleep 5 && pactl set-default-sink \$(pactl list short sinks | grep bluez | awk '{print \$2}'); fi; sleep 60; done) &"
 shutdown_menu=lock reboot restart-session shutdown sleep
 additional_components=uefi.zip
